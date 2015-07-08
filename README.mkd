@@ -24,6 +24,7 @@ You need to have the following installed:
 Compile with:
 
 ```
+autoreconf -f -i -s
 ./configure
 make
 make install

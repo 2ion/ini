@@ -115,9 +115,11 @@ int main(int argc, char **argv) {
         list_keys(dic, optarg);
         goto end;
       case 'p':
-        if(iniparser_find_entry(dic, optarg) == 1)
-          puts(iniparser_getstring(dic, optarg, NULL));
-        else
+        if(iniparser_find_entry(dic, optarg) == 1) {
+          const char *s = iniparser_getstring(dic, optarg, NULL);
+          if(s != NULL)
+            puts(s);
+        } else
           ret = EXIT_NOKEY;
         goto end;
       case 'e':

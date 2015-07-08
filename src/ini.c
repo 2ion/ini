@@ -21,7 +21,6 @@
 #include <getopt.h>
 
 #define OPTLIST "ae:k:p:s"
-#define ACTION_STACK 1
 
 enum {
   EXIT_NOFILE = 1,

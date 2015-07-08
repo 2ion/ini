@@ -1,0 +1,11 @@
+prefix=/usr
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: iniparser
+Description: Stand-alone ini file parsing library
+Version: 4.0
+Requires:
+Libs: -L${libdir} -liniparser
+Cflags: -I${includedir}

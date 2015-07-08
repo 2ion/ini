@@ -1,0 +1,4 @@
+bin_PROGRAMS = ini
+ini_SOURCES = ini.c
+ini_CFLAGS = $(INIPARSER_CFLAGS)
+ini_LDFLAGS = $(INIPARSER_LIBS)

@@ -1,0 +1,71 @@
+# ini
+
+ini is a command line program for examining the contents of INI files.
+It has been written to be used primarily in shell scripts but may have
+other applications.
+
+The underlying INI parser library is
+[libiniparser](http://ndevilla.free.fr/iniparser). ini's support for INI
+styles and constructs is limited to what the library provides.
+
+ini has been written against [iniparser
+4.0](https://projects.archlinux.org/svntogit/packages.git/log/trunk?h=packages/iniparser)
+as distributed by the Arch Linux project.
+
+## Building and Installing
+
+You need to have the following installed:
+
+* GNU automake and autoconf
+* pkg-config
+* A C99 compiler
+* libiniparser 4.0
+
+Compile with:
+
+```
+./configure
+make
+make install
+```
+
+## Synopsis
+
+```
+Invocation forms:
+  ini -h
+  ini [ae:k:p:s] INI-FILE
+Where:
+  -h                   Print this message and exit
+  -s, --list-sections  List INI sections
+  -k, --list-keys $SEC List keys in section $SEC
+  -a, --list-all-keys  List all keys
+  -e, --exists $KEY    Test if the value at $KEY exists, return 0
+                       if it does, otherwise return 2
+  -p, --print $KEY     Print the value associated with $KEY and
+                       return 0, otherwise print nothing and return 2
+
+In the case that the INI-FILE doesn't exist, return 1. A $KEY is a
+string of the format ${section}:${key}, completely lowercased. Colons
+in $section and $key must be escaped with a backslash.
+```
+
+## LICENSE
+
+```
+ini - examine INI files from the command line
+Copyright (C) 2015 Jens John < dev at 2ion dot de >
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <http://www.gnu.org/licenses/>.
+```

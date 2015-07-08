@@ -14,6 +14,9 @@ as distributed by the Arch Linux project.
 
 ## Building and Installing
 
+On Arch Linux, the package [ini-git](https://aur.archlinux.org/packages/ini-git/)
+([AUR4](https://aur4.archlinux.org/packages/ini-git/)) is available in the AUR.
+
 You need to have the following installed:
 
 * GNU automake and autoconf

@@ -12,6 +12,35 @@ ini has been written against [iniparser
 4.0](https://projects.archlinux.org/svntogit/packages.git/log/trunk?h=packages/iniparser)
 as distributed by the Arch Linux project.
 
+## Synopsis
+
+```
+Invocation forms:
+  ini -h
+  ini [ae:g:G:k:p:sv:V:] INI-FILE
+Where:
+  -a, --list-all-keys      List all keys
+  -e, --exists $KEY        Test if the value at $KEY exists, return 0
+                           if it does, otherwise return 2
+  -G, --egrep $REGEX       List all keys matching the given extended regex
+  -g, --grep $REGEX        List all keys matching the given POSIX regex
+  -h                       Print this message and exit
+  -k, --list-keys $SEC     List keys in section $SEC
+  -p, --print $KEY         Print the value associated with $KEY and
+                           return 0, otherwise print nothing and return 2
+  -s, --list-sections      List INI sections
+  -V, --egrep-value $REGEX List all keys the value of which matches the
+                           given extended regex
+  -v, --grep-value $REGEX  List all keys the value of which matches the
+                           given POSIX regex
+
+In the case that the INI-FILE doesn't exist, return 1. A $KEY is a
+string of the format ${section}:${key}, completely lowercased. Colons
+in $section and $key must be escaped with a backslash. Regexes are
+case-insensitive and don't have captures enabled.
+```
+
+
 ## Building and Installing
 
 On Arch Linux, the package [ini-git](https://aur.archlinux.org/packages/ini-git/)
@@ -31,30 +60,6 @@ autoreconf -f -i -s
 ./configure
 make
 make install
-```
-
-## Synopsis
-
-```
-Invocation forms:
-  ini -h
-  ini [ae:g:G:k:p:s] INI-FILE
-Where:
-  -a, --list-all-keys  List all keys
-  -e, --exists $KEY    Test if the value at $KEY exists, return 0
-                       if it does, otherwise return 2
-  -G, --egrep $REGEX   List all keys matching the given extended regex
-  -g, --grep $REGEX    List all keys matching the given POSIX regex
-  -h                   Print this message and exit
-  -k, --list-keys $SEC List keys in section $SEC
-  -p, --print $KEY     Print the value associated with $KEY and
-                       return 0, otherwise print nothing and return 2
-  -s, --list-sections  List INI sections
-
-In the case that the INI-FILE doesn't exist, return 1. A $KEY is a
-string of the format ${section}:${key}, completely lowercased. Colons
-in $section and $key must be escaped with a backslash. Regexes are
-case-insensitive and don't have captures enabled.
 ```
 
 ## LICENSE

@@ -27,7 +27,7 @@
 
 #define LERROR(status, errnum, ...) error_at_line((status), (errnum), \
         (__func__), (__LINE__), __VA_ARGS__)
-#define OPTLIST "ae:g:G:k:p:s"
+#define OPTLIST "ae:g:G:k:p:sv:V:"
 
 enum {
   EXIT_NOFILE = 1,
@@ -37,17 +37,20 @@ enum {
 
 static const char *options = OPTLIST;
 static const struct option options_long[] = {
-  { "list-sections",  no_argument,        NULL, 's' },
-  { "list-keys",      required_argument,  NULL, 'k' },
-  { "list-all-keys",  no_argument,        NULL, 'a' },
-  { "exists",         required_argument,  NULL, 'e' },
-  { "print",          required_argument,  NULL, 'p' },
-  { "grep",           required_argument,  NULL, 'g' },
   { "egrep",          required_argument,  NULL, 'G' },
+  { "egrep-value",    required_argument,  NULL, 'V' },
+  { "exists",         required_argument,  NULL, 'e' },
+  { "grep",           required_argument,  NULL, 'g' },
+  { "grep-value",     required_argument,  NULL, 'v' },
+  { "list-all-keys",  no_argument,        NULL, 'a' },
+  { "list-keys",      required_argument,  NULL, 'k' },
+  { "list-sections",  no_argument,        NULL, 's' },
+  { "print",          required_argument,  NULL, 'p' },
   { NULL,             NULL,               NULL, NULL}};
 
 
 static void grep_keys(dictionary*, const char*, bool);
+static void grep_values(dictionary*, const char*, bool);
 static void list_all(dictionary*);
 static void list_keys(dictionary*, const char*);
 static void list_sections(dictionary*);
@@ -59,16 +62,20 @@ void usage(void) {
       "  ini -h\n"
       "  ini [" OPTLIST "] INI-FILE\n"
       "Where:\n"
-      "  -a, --list-all-keys  List all keys\n"
-      "  -e, --exists $KEY    Test if the value at $KEY exists, return 0\n"
-      "                       if it does, otherwise return 2\n"
-      "  -G, --egrep $REGEX   List all keys matching the given extended regex\n"
-      "  -g, --grep $REGEX    List all keys matching the given POSIX regex\n"
-      "  -h                   Print this message and exit\n"
-      "  -k, --list-keys $SEC List keys in section $SEC\n"
-      "  -p, --print $KEY     Print the value associated with $KEY and\n"
-      "                       return 0, otherwise print nothing and return 2\n"
-      "  -s, --list-sections  List INI sections\n"
+      "  -a, --list-all-keys      List all keys\n"
+      "  -e, --exists $KEY        Test if the value at $KEY exists, return 0\n"
+      "                           if it does, otherwise return 2\n"
+      "  -G, --egrep $REGEX       List all keys matching the given extended regex\n"
+      "  -g, --grep $REGEX        List all keys matching the given POSIX regex\n"
+      "  -h                       Print this message and exit\n"
+      "  -k, --list-keys $SEC     List keys in section $SEC\n"
+      "  -p, --print $KEY         Print the value associated with $KEY and\n"
+      "                           return 0, otherwise print nothing and return 2\n"
+      "  -s, --list-sections      List INI sections\n"
+      "  -V, --egrep-value $REGEX List all keys the value of which matches the\n"
+      "                           given extended regex\n"
+      "  -v, --grep-value $REGEX  List all keys the value of which matches the\n"
+      "                           given POSIX regex\n"
       "\n"
       "In the case that the INI-FILE doesn't exist, return 1. A $KEY is a\n"
       "string of the format ${section}:${key}, completely lowercased. Colons\n"
@@ -142,6 +149,47 @@ void grep_keys(dictionary *dic, const char *regex, bool extended) {
   return;
 }
 
+void grep_values(dictionary *dic, const char *regex, bool extended) {
+  regex_t r;
+  int err;
+  int flags = REG_ICASE | REG_NOSUB;
+
+  if(extended)
+    flags |= REG_EXTENDED;
+
+  if((err = regcomp(&r, regex, flags)) != 0) {
+    print_regerror(err, &r);
+    return;
+  }
+
+  const int nsec = iniparser_getnsec(dic);
+  for(int sec = 0; sec < nsec; sec++) {
+    const char *secname = iniparser_getsecname(dic, sec);
+    const int nkeys = iniparser_getsecnkeys(dic, secname);
+    const char *rec[nkeys];
+    iniparser_getseckeys(dic, secname, &rec[0]);
+    for(int i = 0; i < nkeys; i++) {
+      const char *s = iniparser_getstring(dic, rec[i], NULL);  
+      if(s == NULL)
+        continue;
+      switch((err = regexec(&r, s, 0, NULL, 0))) {
+        case 0:
+          puts(rec[i]);
+          break;
+        case REG_NOMATCH:
+          break;
+        default:
+          print_regerror(err, &r);
+          break;
+      }
+    }
+  }
+
+  regfree(&r);
+
+  return;
+}
+
 int main(int argc, char **argv) {
   int opt;
   const char *file = NULL;
@@ -190,6 +238,12 @@ int main(int argc, char **argv) {
         goto end;
       case 'G':
         grep_keys(dic, optarg, true);
+        goto end;
+      case 'v':
+        grep_values(dic, optarg, false);
+        goto end;
+      case 'V':
+        grep_values(dic, optarg, true);
         goto end;
     }
 

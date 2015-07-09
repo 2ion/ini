@@ -16,11 +16,18 @@
   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include <iniparser.h>
-#include <unistd.h>
+#include <errno.h>
+#include <error.h>
 #include <getopt.h>
+#include <iniparser.h>
+#include <regex.h>
+#include <stdbool.h>
+#include <sys/types.h>
+#include <unistd.h>
 
-#define OPTLIST "ae:k:p:s"
+#define LERROR(status, errnum, ...) error_at_line((status), (errnum), \
+        (__func__), (__LINE__), __VA_ARGS__)
+#define OPTLIST "ae:g:G:k:p:s"
 
 enum {
   EXIT_NOFILE = 1,
@@ -35,30 +42,38 @@ static const struct option options_long[] = {
   { "list-all-keys",  no_argument,        NULL, 'a' },
   { "exists",         required_argument,  NULL, 'e' },
   { "print",          required_argument,  NULL, 'p' },
+  { "grep",           required_argument,  NULL, 'g' },
+  { "egrep",          required_argument,  NULL, 'G' },
   { NULL,             NULL,               NULL, NULL}};
 
-static void usage(void);
-static void list_sections(dictionary*);
-static void list_keys(dictionary*, const char*);
+
+static void grep_keys(dictionary*, const char*, bool);
 static void list_all(dictionary*);
+static void list_keys(dictionary*, const char*);
+static void list_sections(dictionary*);
+static void print_regerror(int, const regex_t*);
+static void usage(void);
 
 void usage(void) {
   puts("Invocation forms:\n"
       "  ini -h\n"
       "  ini [" OPTLIST "] INI-FILE\n"
       "Where:\n"
-      "  -h                   Print this message and exit\n"
-      "  -s, --list-sections  List INI sections\n"
-      "  -k, --list-keys $SEC List keys in section $SEC\n"
       "  -a, --list-all-keys  List all keys\n"
       "  -e, --exists $KEY    Test if the value at $KEY exists, return 0\n"
       "                       if it does, otherwise return 2\n"
+      "  -G, --egrep $REGEX   List all keys matching the given extended regex\n"
+      "  -g, --grep $REGEX    List all keys matching the given POSIX regex\n"
+      "  -h                   Print this message and exit\n"
+      "  -k, --list-keys $SEC List keys in section $SEC\n"
       "  -p, --print $KEY     Print the value associated with $KEY and\n"
       "                       return 0, otherwise print nothing and return 2\n"
+      "  -s, --list-sections  List INI sections\n"
       "\n"
       "In the case that the INI-FILE doesn't exist, return 1. A $KEY is a\n"
       "string of the format ${section}:${key}, completely lowercased. Colons\n"
-      "in $section and $key must be escaped with a backslash.");
+      "in $section and $key must be escaped with a backslash. Regexes are\n"
+      "case-insensitive and don't have captures enabled.");
 }
 
 void list_sections(dictionary *dic) {
@@ -83,11 +98,56 @@ void list_all(dictionary *dic) {
   }
 }
 
+void print_regerror(int err, const regex_t *r) {
+  size_t msglen = regerror(err, r, NULL, 0) + 1;
+  char msgbuf[msglen];
+  regerror(err, r, &msgbuf[0], msglen);
+  fprintf(stderr, "%s\n", msgbuf);
+}
+
+void grep_keys(dictionary *dic, const char *regex, bool extended) {
+  regex_t r;
+  int err;
+  int flags = REG_ICASE | REG_NOSUB;
+
+  if(extended)
+    flags |= REG_EXTENDED;
+
+  if((err = regcomp(&r, regex, flags)) != 0) {
+    print_regerror(err, &r);
+    return;
+  }
+
+  const int nsec = iniparser_getnsec(dic);
+  for(int sec = 0; sec < nsec; sec++) {
+    const char *secname = iniparser_getsecname(dic, sec);
+    const int nkeys = iniparser_getsecnkeys(dic, secname);
+    const char *rec[nkeys];
+    iniparser_getseckeys(dic, secname, &rec[0]);
+    for(int i = 0; i < nkeys; i++)
+      switch((err = regexec(&r, rec[i], 0, NULL, 0))) {
+        case 0:
+          puts(rec[i]);
+          break;
+        case REG_NOMATCH:
+          break;
+        default:
+          print_regerror(err, &r);
+          break;
+      }
+  }
+
+  regfree(&r);
+
+  return;
+}
+
 int main(int argc, char **argv) {
   int opt;
   const char *file = NULL;
   dictionary *dic = NULL;
   int ret = EXIT_OK;
+  bool use_extended_regex = false;
 
   if(argc < 2)
     return EXIT_NOFILE;
@@ -124,6 +184,12 @@ int main(int argc, char **argv) {
       case 'e':
         if(iniparser_find_entry(dic, optarg) == 0)
           ret = EXIT_NOKEY;
+        goto end;
+      case 'g':
+        grep_keys(dic, optarg, false);
+        goto end;
+      case 'G':
+        grep_keys(dic, optarg, true);
         goto end;
     }
 

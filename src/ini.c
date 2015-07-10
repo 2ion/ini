@@ -49,6 +49,7 @@ static const struct option options_long[] = {
   { NULL,             NULL,               NULL, NULL}};
 
 
+static void grep_exec(const regex_t*, const char*);
 static void grep_keys(dictionary*, const char*, bool);
 static void grep_values(dictionary*, const char*, bool);
 static void list_all(dictionary*);
@@ -112,10 +113,24 @@ void print_regerror(int err, const regex_t *r) {
   fprintf(stderr, "%s\n", msgbuf);
 }
 
+void grep_exec(const regex_t *r, const char *s) {
+  int err;
+  switch((err = regexec(r, s, 0, NULL, 0))) {
+    case 0:
+      puts(s);
+      break;
+    case REG_NOMATCH:
+      break;
+    default:
+      print_regerror(err, r);
+      break;
+  }
+}
+
 void grep_keys(dictionary *dic, const char *regex, bool extended) {
-  regex_t r;
   int err;
   int flags = REG_ICASE | REG_NOSUB;
+  regex_t r;
 
   if(extended)
     flags |= REG_EXTENDED;
@@ -132,16 +147,7 @@ void grep_keys(dictionary *dic, const char *regex, bool extended) {
     const char *rec[nkeys];
     iniparser_getseckeys(dic, secname, &rec[0]);
     for(int i = 0; i < nkeys; i++)
-      switch((err = regexec(&r, rec[i], 0, NULL, 0))) {
-        case 0:
-          puts(rec[i]);
-          break;
-        case REG_NOMATCH:
-          break;
-        default:
-          print_regerror(err, &r);
-          break;
-      }
+      grep_exec(&r, rec[i]);
   }
 
   regfree(&r);
@@ -150,9 +156,9 @@ void grep_keys(dictionary *dic, const char *regex, bool extended) {
 }
 
 void grep_values(dictionary *dic, const char *regex, bool extended) {
-  regex_t r;
   int err;
   int flags = REG_ICASE | REG_NOSUB;
+  regex_t r;
 
   if(extended)
     flags |= REG_EXTENDED;
@@ -172,16 +178,7 @@ void grep_values(dictionary *dic, const char *regex, bool extended) {
       const char *s = iniparser_getstring(dic, rec[i], NULL);  
       if(s == NULL)
         continue;
-      switch((err = regexec(&r, s, 0, NULL, 0))) {
-        case 0:
-          puts(rec[i]);
-          break;
-        case REG_NOMATCH:
-          break;
-        default:
-          print_regerror(err, &r);
-          break;
-      }
+      grep_exec(&r, s);
     }
   }
 
@@ -191,11 +188,11 @@ void grep_values(dictionary *dic, const char *regex, bool extended) {
 }
 
 int main(int argc, char **argv) {
-  int opt;
+  bool use_extended_regex = false;
   const char *file = NULL;
   dictionary *dic = NULL;
+  int opt;
   int ret = EXIT_OK;
-  bool use_extended_regex = false;
 
   if(argc < 2)
     return EXIT_NOFILE;

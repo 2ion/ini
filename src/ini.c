@@ -94,6 +94,8 @@ void list_keys(dictionary *dic, const char *sec) {
   const int n = iniparser_getsecnkeys(dic, sec);
   const char* rec[n];
   const char **l = iniparser_getseckeys(dic, sec, &rec[0]);
+  if(l == NULL)
+    LERROR(EXIT_FAILURE, 0, "iniparser_getseckeys() returned NULL");
   for(int i = 0; i < n; i++)
     puts(rec[i]);
 }
@@ -145,7 +147,9 @@ void grep_keys(dictionary *dic, const char *regex, bool extended) {
     const char *secname = iniparser_getsecname(dic, sec);
     const int nkeys = iniparser_getsecnkeys(dic, secname);
     const char *rec[nkeys];
-    iniparser_getseckeys(dic, secname, &rec[0]);
+    const char **l = iniparser_getseckeys(dic, secname, &rec[0]);
+    if(l == NULL)
+      return;
     for(int i = 0; i < nkeys; i++)
       grep_exec(&r, rec[i]);
   }
@@ -173,7 +177,9 @@ void grep_values(dictionary *dic, const char *regex, bool extended) {
     const char *secname = iniparser_getsecname(dic, sec);
     const int nkeys = iniparser_getsecnkeys(dic, secname);
     const char *rec[nkeys];
-    iniparser_getseckeys(dic, secname, &rec[0]);
+    const char **l = iniparser_getseckeys(dic, secname, &rec[0]);
+    if(l == NULL)
+      return;
     for(int i = 0; i < nkeys; i++) {
       const char *s = iniparser_getstring(dic, rec[i], NULL);  
       if(s == NULL)

@@ -21,7 +21,6 @@
 #include <getopt.h>
 #include <iniparser.h>
 #include <regex.h>
-#include <stdbool.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -47,11 +46,12 @@ static const struct option options_long[] = {
   { "list-sections",  no_argument,        NULL, 's' },
   { "print",          required_argument,  NULL, 'p' },
   { NULL,             NULL,               NULL, NULL}};
+static const int DEFAULT_REG_FLAGS = REG_ICASE | REG_NOSUB;
 
 
 static void grep_exec(const regex_t*, const char*);
-static void grep_keys(dictionary*, const char*, bool);
-static void grep_values(dictionary*, const char*, bool);
+static void grep_keys(dictionary*, const char*, int);
+static void grep_values(dictionary*, const char*, int);
 static void list_all(dictionary*);
 static void list_keys(dictionary*, const char*);
 static void list_sections(dictionary*);
@@ -129,13 +129,10 @@ void grep_exec(const regex_t *r, const char *s) {
   }
 }
 
-void grep_keys(dictionary *dic, const char *regex, bool extended) {
+void grep_keys(dictionary *dic, const char *regex, int eflags) {
   int err;
-  int flags = REG_ICASE | REG_NOSUB;
+  int flags = DEFAULT_REG_FLAGS | eflags;
   regex_t r;
-
-  if(extended)
-    flags |= REG_EXTENDED;
 
   if((err = regcomp(&r, regex, flags)) != 0) {
     print_regerror(err, &r);
@@ -159,13 +156,10 @@ void grep_keys(dictionary *dic, const char *regex, bool extended) {
   return;
 }
 
-void grep_values(dictionary *dic, const char *regex, bool extended) {
+void grep_values(dictionary *dic, const char *regex, int eflags) {
   int err;
-  int flags = REG_ICASE | REG_NOSUB;
+  int flags = DEFAULT_REG_FLAGS | eflags;
   regex_t r;
-
-  if(extended)
-    flags |= REG_EXTENDED;
 
   if((err = regcomp(&r, regex, flags)) != 0) {
     print_regerror(err, &r);
@@ -194,7 +188,6 @@ void grep_values(dictionary *dic, const char *regex, bool extended) {
 }
 
 int main(int argc, char **argv) {
-  bool use_extended_regex = false;
   const char *file = NULL;
   dictionary *dic = NULL;
   int opt;
@@ -237,16 +230,16 @@ int main(int argc, char **argv) {
           ret = EXIT_NOKEY;
         goto end;
       case 'g':
-        grep_keys(dic, optarg, false);
+        grep_keys(dic, optarg, 0);
         goto end;
       case 'G':
-        grep_keys(dic, optarg, true);
+        grep_keys(dic, optarg, REG_EXTENDED);
         goto end;
       case 'v':
-        grep_values(dic, optarg, false);
+        grep_values(dic, optarg, 0);
         goto end;
       case 'V':
-        grep_values(dic, optarg, true);
+        grep_values(dic, optarg, REG_EXTENDED);
         goto end;
     }
 

@@ -1,5 +1,5 @@
 AC_INIT([ini], [0.1], [dev@2ion.de])
-AM_INIT_AUTOMAKE([foreign -Wall -Werror])
+AM_INIT_AUTOMAKE([foreign -Wall])
 
 AC_PROG_CC_C99 
 

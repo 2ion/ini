@@ -1,3 +1,8 @@
 SUBDIRS = src
+if HAVE_PANDOC
+SUBDIRS+=doc
+endif
+
 EXTRA_DIST = README.mkd LICENSE
+
 dist_doc_DATA = README.mkd LICENSE

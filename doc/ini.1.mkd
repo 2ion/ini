@@ -1,0 +1,88 @@
+% INI(1) User Manuals
+% Jens John <dev@2ion.de>
+% July 21, 2015
+
+# NAME
+
+ini - examine the contents of INI files
+
+# INVOCATION FORMS
+
+`ini` \-h
+
+`ini` [ae:g:G:k:p:sv:V:] [longform\-options] _INI-FILE_
+
+# DESCRIPTION
+
+ini is a tool for examining the contents of files written in the INI
+format. It allows to list sections and keys as well as to query the
+values stored at a given key. It is possible to find keys whose names or
+associated values match a given POSIX or extended regular expression.
+
+# KEY LIST FORMAT
+
+Queries output path-like INI keys in the format
+
+  `${INI_SECTION}:${INI_KEY}`
+
+When passing INI keys to the `-p, --print` option, eventual colons in
+file names need to be escaped using a backslash '\\'. The entire key is
+lowercased.
+
+Regular expressions will be executed on the whole path-like INI key.
+Regular expressions are case-insensitive.
+
+# OPTIONS
+
+Options may be specified using short- or longform arguments. All options
+except for `-h` require that a path to an INI file _INI-FILE_ be given,
+and all operations will be executed on the given file. The file path
+must be always the last item in the command line.
+
+-a, \--list-all-keys
+:   List all keys in all sections.
+
+-e, \--exists *KEY*
+:   Test if the value at $KEY exists. Return 0 if it does, otherwise
+    return 2.
+
+-G, \--egrep *REGEX*
+:   List all keys whose names match the given extended regular
+    expression. 
+
+-g, \--grep *REGEX*
+:   List all keys whose names match the given POSIX regular expression.
+
+-h
+:   Print this message and exit.
+
+-k, \--list-keys *SECTION*
+:   List all keys in given INI section.
+
+-p, \--print *KEY*
+:   Print the value associated with *KEY* and return 0, if no such value
+    exists return 2.
+
+-s, --list-sections
+:   List all INI sections.
+
+-V, \--egrep-value *REGEX*
+:   List all keys the value of which matches the given extended regular
+    expression.
+
+-v, \--grep-value *REGEX*
+:   List all keys the value of which matches the given POSIX regular
+    expression.
+
+# RETURN VALUE
+
+In the case of success, return 0. If _INI-FILE_ doesn't exist, return 1.
+If a given *KEY* couldn't be found, return 2.
+
+# SEE ALSO
+
+**grep**(1), **regex**(3), **regex**(7)
+
+# PROJECT HOMEPAGE
+
+*https://github.com/2ion/ini*

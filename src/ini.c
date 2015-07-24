@@ -49,7 +49,7 @@ static const struct option options_long[] = {
 static const int DEFAULT_REG_FLAGS = REG_ICASE | REG_NOSUB;
 
 
-static void grep_exec(const regex_t*, const char*);
+static void grep_exec(const regex_t*, const char*, const char*);
 static void grep_keys(dictionary*, const char*, int);
 static void grep_values(dictionary*, const char*, int);
 static void list_all(dictionary*);
@@ -115,11 +115,11 @@ void print_regerror(int err, const regex_t *r) {
   fprintf(stderr, "%s\n", msgbuf);
 }
 
-void grep_exec(const regex_t *r, const char *s) {
+void grep_exec(const regex_t *r, const char *s, const char *putstr) {
   int err;
   switch((err = regexec(r, s, 0, NULL, 0))) {
     case 0:
-      puts(s);
+      puts(putstr);
       break;
     case REG_NOMATCH:
       break;
@@ -148,7 +148,7 @@ void grep_keys(dictionary *dic, const char *regex, int eflags) {
     if(l == NULL)
       return;
     for(int i = 0; i < nkeys; i++)
-      grep_exec(&r, rec[i]);
+      grep_exec(&r, rec[i], rec[i]);
   }
 
   regfree(&r);
@@ -178,7 +178,7 @@ void grep_values(dictionary *dic, const char *regex, int eflags) {
       const char *s = iniparser_getstring(dic, rec[i], NULL);  
       if(s == NULL)
         continue;
-      grep_exec(&r, s);
+      grep_exec(&r, s, rec[i]);
     }
   }
 

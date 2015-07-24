@@ -29,9 +29,9 @@
 #define OPTLIST "ae:g:G:k:p:sv:V:"
 
 enum {
+  EXIT_OK     = 0,
   EXIT_NOFILE = 1,
-  EXIT_NOKEY = 2,
-  EXIT_OK = 0
+  EXIT_NOKEY  = 2
 };
 
 static const char *options = OPTLIST;
@@ -47,7 +47,6 @@ static const struct option options_long[] = {
   { "print",          required_argument,  NULL, 'p' },
   { NULL,             NULL,               NULL, NULL}};
 static const int DEFAULT_REG_FLAGS = REG_ICASE | REG_NOSUB;
-
 
 static void grep_exec(const regex_t*, const char*, const char*);
 static void grep_keys(dictionary*, const char*, int);

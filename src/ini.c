@@ -1,6 +1,6 @@
 /*
 ini - examine INI files from the command line
-  Copyright (C) 2015 Jens John < dev at 2ion dot de >
+  Copyright (C) 2015-2019 Jens John <dev@2ion.de>
 
   This program is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
@@ -85,33 +85,56 @@ void usage(void) {
 
 void list_sections(dictionary *dic) {
   const int n = iniparser_getnsec(dic);
-  for(int sec = 0; sec < n; sec++)
-    puts(iniparser_getsecname(dic, sec));
+  if (n == -1)
+    LERROR(EXIT_FAILURE, 0, "iniparser_getnsec() returned -1");
+
+  for(int sec = 0; sec < n; sec++) {
+    const char *p = iniparser_getsecname(dic, sec);
+    if (p == NULL)
+      LERROR(EXIT_FAILURE, 0, "iniparser_getsecname() returned NULL");
+
+    puts(p);
+  }
 }
 
 void list_keys(dictionary *dic, const char *sec) {
   const int n = iniparser_getsecnkeys(dic, sec);
-  const char* rec[n];
+  const char **rec = calloc(n, sizeof(char*));
+  if (rec == NULL)
+    LERROR(EXIT_FAILURE, errno, "calloc");
+
   const char **l = iniparser_getseckeys(dic, sec, &rec[0]);
   if(l == NULL)
     LERROR(EXIT_FAILURE, 0, "iniparser_getseckeys() returned NULL");
+
   for(int i = 0; i < n; i++)
     puts(rec[i]);
+
+  /* Pointers in this array are allocated inside the dictionary, so we don't free
+   * them. */
+  free(rec);
 }
 
 void list_all(dictionary *dic) {
   const int nsec = iniparser_getnsec(dic);
+  if (nsec == -1)
+    LERROR(EXIT_FAILURE, 0, "iniparser_getnsec(): returned -1");
   for(int sec = 0; sec < nsec; sec++) {
     const char *secname = iniparser_getsecname(dic, sec);
+    if (secname == NULL)
+      LERROR(EXIT_FAILURE, 0, "initparser_getsecname(): returned NULL");
     list_keys(dic, secname);
   }
 }
 
 void print_regerror(int err, const regex_t *r) {
   size_t msglen = regerror(err, r, NULL, 0) + 1;
-  char msgbuf[msglen];
+  char *msgbuf = calloc(msglen, sizeof(char));
+  if (msgbuf == NULL)
+    LERROR(EXIT_FAILURE, errno, "calloc");
   regerror(err, r, &msgbuf[0], msglen);
   fprintf(stderr, "%s\n", msgbuf);
+  free(msgbuf);
 }
 
 void grep_exec(const regex_t *r, const char *s, const char *putstr) {
@@ -139,20 +162,28 @@ void grep_keys(dictionary *dic, const char *regex, int eflags) {
   }
 
   const int nsec = iniparser_getnsec(dic);
+
   for(int sec = 0; sec < nsec; sec++) {
     const char *secname = iniparser_getsecname(dic, sec);
+    if (secname == NULL)
+      LERROR(EXIT_FAILURE, 0, "iniparser_getsecname() returned NULL");
+
     const int nkeys = iniparser_getsecnkeys(dic, secname);
-    const char *rec[nkeys];
+    const char **rec = calloc(nkeys, sizeof(char*));
+    if (rec == NULL)
+      LERROR(EXIT_FAILURE, errno, "calloc");
+
     const char **l = iniparser_getseckeys(dic, secname, &rec[0]);
     if(l == NULL)
-      return;
+      LERROR(EXIT_FAILURE, 0, "iniparser_getseckeys() returned NULL");
+
     for(int i = 0; i < nkeys; i++)
       grep_exec(&r, rec[i], rec[i]);
+
+    free(rec);
   }
 
   regfree(&r);
-
-  return;
 }
 
 void grep_values(dictionary *dic, const char *regex, int eflags) {
@@ -166,24 +197,33 @@ void grep_values(dictionary *dic, const char *regex, int eflags) {
   }
 
   const int nsec = iniparser_getnsec(dic);
+
   for(int sec = 0; sec < nsec; sec++) {
     const char *secname = iniparser_getsecname(dic, sec);
+    if (secname == NULL)
+      LERROR(EXIT_FAILURE, 0, "iniparser_getsecname(): returned NULL");
+
     const int nkeys = iniparser_getsecnkeys(dic, secname);
-    const char *rec[nkeys];
+    const char **rec = calloc(nkeys, sizeof(char*));
+    if (rec == NULL)
+      LERROR(EXIT_FAILURE, errno, "calloc");
+
     const char **l = iniparser_getseckeys(dic, secname, &rec[0]);
     if(l == NULL)
-      return;
+      LERROR(EXIT_FAILURE, 0, "iniparser_getseckeys() returned NULL");
+
     for(int i = 0; i < nkeys; i++) {
       const char *s = iniparser_getstring(dic, rec[i], NULL);  
       if(s == NULL)
-        continue;
+        LERROR(EXIT_FAILURE, 0, "iniparser_getstring() failed");
+
       grep_exec(&r, s, rec[i]);
     }
+
+    free(rec);
   }
 
   regfree(&r);
-
-  return;
 }
 
 int main(int argc, char **argv) {

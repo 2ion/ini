@@ -1,5 +1,5 @@
 /*
-  ini - examine INI files from the command line
+ini - examine INI files from the command line
   Copyright (C) 2015 Jens John < dev at 2ion dot de >
 
   This program is free software: you can redistribute it and/or modify
@@ -45,7 +45,7 @@ static const struct option options_long[] = {
   { "list-keys",      required_argument,  NULL, 'k' },
   { "list-sections",  no_argument,        NULL, 's' },
   { "print",          required_argument,  NULL, 'p' },
-  { NULL,             NULL,               NULL, NULL}};
+  { 0,                0,                  0,    0  }};
 static const int DEFAULT_REG_FLAGS = REG_ICASE | REG_NOSUB;
 
 static void grep_exec(const regex_t*, const char*, const char*);

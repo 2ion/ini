@@ -1,7 +1,7 @@
 AC_INIT([ini], [0.2], [dev@2ion.de])
 AM_INIT_AUTOMAKE([foreign -Wall])
 
-AC_PROG_CC_C99 
+AC_PROG_CC
 
 AC_CONFIG_SRCDIR([src/ini.c])
 AC_CONFIG_HEADERS([config.h])

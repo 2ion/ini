@@ -48,14 +48,56 @@ static const struct option options_long[] = {
   { 0,                0,                  0,    0  }};
 static const int DEFAULT_REG_FLAGS = REG_ICASE | REG_NOSUB;
 
-static void grep_exec(const regex_t*, const char*, const char*);
-static void grep_keys(dictionary*, const char*, int);
-static void grep_values(dictionary*, const char*, int);
-static void list_all(dictionary*);
-static void list_keys(dictionary*, const char*);
-static void list_sections(dictionary*);
-static void print_regerror(int, const regex_t*);
-static void usage(void);
+static inline const char*   xiniparser_getsecname(dictionary*, int);
+static inline const char*   xiniparser_getstring(dictionary*, const char*, char*);
+static inline const char**  xiniparser_getseckeys(dictionary*, const char*, const char**);
+static inline int           xiniparser_getnsec(dictionary*);
+static inline void*         xcalloc(size_t, size_t);
+static void                 grep_exec(const regex_t*, const char*, const char*);
+static void                 grep_keys(dictionary*, const char*, int);
+static void                 grep_values(dictionary*, const char*, int);
+static void                 list_all(dictionary*);
+static void                 list_keys(dictionary*, const char*);
+static void                 list_sections(dictionary*);
+static void                 print_regerror(int, const regex_t*);
+static void                 usage(void);
+
+static inline void* xcalloc(size_t n, size_t size) {
+  void *p = calloc(n, size);
+  if (p == NULL)
+    LERROR(EXIT_FAILURE, errno, "calloc");
+  return p;
+}
+
+static inline int xiniparser_getnsec(dictionary *dic) {
+  const int n = iniparser_getnsec(dic);
+  if (n == -1)
+    LERROR(EXIT_FAILURE, 0, "library returned -1");
+  return n;
+}
+
+static inline const char** xiniparser_getseckeys(dictionary *dic,
+    const char *secname, const char **rec) {
+  const char **p = iniparser_getseckeys(dic, secname, &rec[0]);
+  if (p == NULL)
+    LERROR(EXIT_FAILURE, 0, "library returned NULL");
+  return p;
+}
+
+static inline const char* xiniparser_getsecname(dictionary *dic, int sec) {
+  const char *p = iniparser_getsecname(dic, sec);
+  if (p == NULL)
+    LERROR(EXIT_FAILURE, 0, "library returned NULL");
+  return p;
+}
+
+static inline const char *xiniparser_getstring(dictionary* dic, const char *key,
+  char *def) {
+  const char *p = iniparser_getstring(dic, key, def);
+  if (p == NULL)
+    LERROR(EXIT_FAILURE, 0, "library returned NULL");
+  return p;
+}
 
 void usage(void) {
   puts("Invocation forms:\n"
@@ -84,54 +126,35 @@ void usage(void) {
 }
 
 void list_sections(dictionary *dic) {
-  const int n = iniparser_getnsec(dic);
-  if (n == -1)
-    LERROR(EXIT_FAILURE, 0, "iniparser_getnsec() returned -1");
-
+  const int n = xiniparser_getnsec(dic);
   for(int sec = 0; sec < n; sec++) {
-    const char *p = iniparser_getsecname(dic, sec);
-    if (p == NULL)
-      LERROR(EXIT_FAILURE, 0, "iniparser_getsecname() returned NULL");
-
+    const char *p = xiniparser_getsecname(dic, sec);
     puts(p);
   }
 }
 
 void list_keys(dictionary *dic, const char *sec) {
   const int n = iniparser_getsecnkeys(dic, sec);
-  const char **rec = calloc(n, sizeof(char*));
-  if (rec == NULL)
-    LERROR(EXIT_FAILURE, errno, "calloc");
-
-  const char **l = iniparser_getseckeys(dic, sec, &rec[0]);
-  if(l == NULL)
-    LERROR(EXIT_FAILURE, 0, "iniparser_getseckeys() returned NULL");
-
+  const char **rec = xcalloc(n, sizeof(char*));
+  const char **l = xiniparser_getseckeys(dic, sec, &rec[0]);
   for(int i = 0; i < n; i++)
     puts(rec[i]);
-
   /* Pointers in this array are allocated inside the dictionary, so we don't free
    * them. */
   free(rec);
 }
 
 void list_all(dictionary *dic) {
-  const int nsec = iniparser_getnsec(dic);
-  if (nsec == -1)
-    LERROR(EXIT_FAILURE, 0, "iniparser_getnsec(): returned -1");
+  const int nsec = xiniparser_getnsec(dic);
   for(int sec = 0; sec < nsec; sec++) {
-    const char *secname = iniparser_getsecname(dic, sec);
-    if (secname == NULL)
-      LERROR(EXIT_FAILURE, 0, "initparser_getsecname(): returned NULL");
+    const char *secname = xiniparser_getsecname(dic, sec);
     list_keys(dic, secname);
   }
 }
 
 void print_regerror(int err, const regex_t *r) {
   size_t msglen = regerror(err, r, NULL, 0) + 1;
-  char *msgbuf = calloc(msglen, sizeof(char));
-  if (msgbuf == NULL)
-    LERROR(EXIT_FAILURE, errno, "calloc");
+  char *msgbuf = xcalloc(msglen, sizeof(char));
   regerror(err, r, &msgbuf[0], msglen);
   fprintf(stderr, "%s\n", msgbuf);
   free(msgbuf);
@@ -161,25 +184,15 @@ void grep_keys(dictionary *dic, const char *regex, int eflags) {
     return;
   }
 
-  const int nsec = iniparser_getnsec(dic);
+  const int nsec = xiniparser_getnsec(dic);
 
   for(int sec = 0; sec < nsec; sec++) {
-    const char *secname = iniparser_getsecname(dic, sec);
-    if (secname == NULL)
-      LERROR(EXIT_FAILURE, 0, "iniparser_getsecname() returned NULL");
-
+    const char *secname = xiniparser_getsecname(dic, sec);
     const int nkeys = iniparser_getsecnkeys(dic, secname);
-    const char **rec = calloc(nkeys, sizeof(char*));
-    if (rec == NULL)
-      LERROR(EXIT_FAILURE, errno, "calloc");
-
-    const char **l = iniparser_getseckeys(dic, secname, &rec[0]);
-    if(l == NULL)
-      LERROR(EXIT_FAILURE, 0, "iniparser_getseckeys() returned NULL");
-
+    const char **rec = xcalloc(nkeys, sizeof(char*));
+    const char **l = xiniparser_getseckeys(dic, secname, &rec[0]);
     for(int i = 0; i < nkeys; i++)
       grep_exec(&r, rec[i], rec[i]);
-
     free(rec);
   }
 
@@ -199,27 +212,14 @@ void grep_values(dictionary *dic, const char *regex, int eflags) {
   const int nsec = iniparser_getnsec(dic);
 
   for(int sec = 0; sec < nsec; sec++) {
-    const char *secname = iniparser_getsecname(dic, sec);
-    if (secname == NULL)
-      LERROR(EXIT_FAILURE, 0, "iniparser_getsecname(): returned NULL");
-
+    const char *secname = xiniparser_getsecname(dic, sec);
     const int nkeys = iniparser_getsecnkeys(dic, secname);
-    const char **rec = calloc(nkeys, sizeof(char*));
-    if (rec == NULL)
-      LERROR(EXIT_FAILURE, errno, "calloc");
-
-    const char **l = iniparser_getseckeys(dic, secname, &rec[0]);
-    if(l == NULL)
-      LERROR(EXIT_FAILURE, 0, "iniparser_getseckeys() returned NULL");
-
+    const char **rec = xcalloc(nkeys, sizeof(char*));
+    const char **l = xiniparser_getseckeys(dic, secname, &rec[0]);
     for(int i = 0; i < nkeys; i++) {
-      const char *s = iniparser_getstring(dic, rec[i], NULL);  
-      if(s == NULL)
-        LERROR(EXIT_FAILURE, 0, "iniparser_getstring() failed");
-
+      const char *s = xiniparser_getstring(dic, rec[i], NULL);  
       grep_exec(&r, s, rec[i]);
     }
-
     free(rec);
   }
 

@@ -1,0 +1,17 @@
+Source: ini
+Section: misc
+Priority: optional
+Maintainer: Jens John <dev@2ion.de>
+Build-Depends: debhelper (>= 9), libiniparser-dev, build-essential, autoconf, automake, pkg-config
+Standards-Version: 3.9.8
+Homepage: https://github.com/2ion/ini
+Vcs-Git: https://github.com/2ion/ini.git
+
+Package: ini
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Program for examining the contents of INI files
+	ini is a command line program for examining the contents of INI files.
+	.
+	It has been written to be used primarily in shell scripts but may have other
+	applications.

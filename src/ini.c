@@ -19,7 +19,7 @@ ini - examine INI files from the command line
 #include <errno.h>
 #include <error.h>
 #include <getopt.h>
-#include <iniparser.h>
+#include <iniparser/iniparser.h>
 #include <regex.h>
 #include <sys/types.h>
 #include <unistd.h>

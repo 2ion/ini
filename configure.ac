@@ -1,4 +1,4 @@
-AC_INIT([ini], [0.2], [dev@2ion.de])
+AC_INIT([ini], [0.3], [dev@2ion.de])
 AM_INIT_AUTOMAKE([foreign -Wall])
 
 AC_PROG_CC
